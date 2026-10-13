@@ -73,7 +73,7 @@ Built with **Next.js (App Router)**, **TypeScript**, **Tailwind CSS**, **Prisma 
 | **Framework** | Next.js 14 (App Router) |
 | **Language** | TypeScript (Strict Mode) |
 | **Styling** | Tailwind CSS + Custom Design Tokens |
-| **Database** | PostgreSQL / SQLite |
+| **Database** | PostgreSQL |
 | **ORM** | Prisma ORM |
 | **Authentication** | Secure JWT + Bcryptjs Password Hashing + HTTP-Only Cookies |
 | **Maps** | Leaflet + OpenStreetMap (Zero API key dependency) |
@@ -98,36 +98,23 @@ npm install
 ```
 
 ### 3. Environment Variables Setup
-Copy `.env.example` to `.env`:
+Copy `.env.example` to `.env` and set a Neon or local PostgreSQL connection string and a unique development secret:
 ```env
-# Database Connection (Default SQLite for zero-config local dev, or PostgreSQL for production)
-DATABASE_URL="file:./dev.db"
-
-# JWT Secret for Session & Auth Token Validation
-AUTH_SECRET="ras-properties-super-secret-key-2026-production-ready"
-JWT_SECRET="ras-properties-super-secret-key-2026-production-ready"
-
-# Next.js Public App URL
+DATABASE_URL="postgresql://USER:PASSWORD@HOST:5432/DATABASE?sslmode=require"
+AUTH_SECRET="replace-with-a-random-secret"
 NEXT_PUBLIC_APP_URL="http://localhost:3000"
-
-# Demo Admin Initial Setup
-ADMIN_EMAIL="admin@rasproperties.in"
-ADMIN_PASSWORD="AdminPassword@2026"
 ```
 
 ### 4. Initialize Database & Seed Real Data
-Run the automated database setup script:
-```bash
-# Push schema and seed 52+ realistic properties, 10 agents, 10 users, 30 inquiries, and blogs
+For local development only, initialize the database and add demo data:
+```powershell
+# This clears existing data; never run it against a production database.
+$env:ALLOW_DEMO_SEED = "true"
 npm run db:setup
+Remove-Item Env:ALLOW_DEMO_SEED
 ```
 
-Or step-by-step:
-```bash
-npx prisma generate
-npx prisma db push
-npx tsx prisma/seed.ts
-```
+The seed command requires an explicit opt-in and refuses to run in production.
 
 ### 5. Run Development Server
 ```bash
@@ -139,7 +126,7 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 
 ## 🔑 Demo Login Accounts
 
-All test accounts come pre-seeded in the database:
+The local development seed creates test accounts:
 
 | Account Type | Email | Password |
 |---|---|---|
@@ -151,23 +138,20 @@ All test accounts come pre-seeded in the database:
 
 ---
 
-## 🌐 Production Deployment (Vercel + PostgreSQL)
+## 🌐 Production Deployment (Vercel + Neon PostgreSQL)
 
-1. Create a PostgreSQL database on **Supabase**, **Neon**, **Railway**, or **AWS RDS**.
-2. In `prisma/schema.prisma`, update the datasource provider to `postgresql`:
-   ```prisma
-   datasource db {
-     provider = "postgresql"
-     url      = env("DATABASE_URL")
-   }
+1. Create a PostgreSQL database in Neon and copy its pooled connection string.
+2. Import this GitHub repository into Vercel and keep the default Next.js build settings.
+3. In Vercel **Project Settings → Environment Variables**, configure:
+   - `DATABASE_URL`: the Neon connection string
+   - `AUTH_SECRET`: a unique random secret (generate one with `node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"`)
+   - `NEXT_PUBLIC_APP_URL`: the deployed Vercel URL, such as `https://your-project.vercel.app`
+4. Set `DATABASE_URL` in your local `.env` to the Neon connection string temporarily, then run `npx prisma db push` to create the schema. Do not run `npm run db:setup` or `prisma/seed.ts` against production; the demo seed clears database records and creates public demo credentials.
+5. Redeploy in Vercel after setting the environment variables. The build script generates the PostgreSQL Prisma client and builds the app.
+6. To create the first production admin, register your own account on the deployed site, then promote that account in Neon SQL Editor:
+   ```sql
+   UPDATE "User" SET role = 'ADMIN' WHERE email = 'your-email@example.com';
    ```
-3. Set your environment variables in Vercel:
-   - `DATABASE_URL`: `postgresql://user:password@host:5432/dbname?sslmode=require`
-   - `AUTH_SECRET`: `<generated-32-char-secret>`
-   - `NEXT_PUBLIC_APP_URL`: `https://your-domain.vercel.app`
-4. Deploy to Vercel. The build script `npm run build` will automatically run `prisma generate` and build the optimized production bundle.
-
----
 
 ## 📄 License
 © 2026 RAS Properties. All rights reserved. Built for Indian Real Estate Excellence.

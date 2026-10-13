@@ -4,6 +4,10 @@ import bcrypt from 'bcryptjs';
 const prisma = new PrismaClient();
 
 async function main() {
+  if (process.env.NODE_ENV === 'production' || process.env.ALLOW_DEMO_SEED !== 'true') {
+    throw new Error('The demo seed is destructive. Set ALLOW_DEMO_SEED=true only for a non-production database.');
+  }
+
   console.log('🌱 Starting comprehensive database seeding for RAS Properties...');
 
   // 1. Clear existing data in reverse order of foreign keys

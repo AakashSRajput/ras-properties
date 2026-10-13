@@ -138,35 +138,36 @@ export default function LoginPage() {
             </button>
           </form>
 
-          {/* Quick Demo Credentials Switcher */}
-          <div className="pt-4 border-t border-slate-100 space-y-2">
-            <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block text-center">
-              Quick 1-Click Demo Login
-            </span>
-            <div className="grid grid-cols-3 gap-2 text-[11px]">
-              <button
-                type="button"
-                onClick={() => fillCredentials('admin@rasproperties.in', 'AdminPassword@2026')}
-                className="p-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-800 font-semibold text-center border border-slate-200 transition-colors"
-              >
-                Admin
-              </button>
-              <button
-                type="button"
-                onClick={() => fillCredentials('rajesh.sharma@rasproperties.in', 'UserPassword@2026')}
-                className="p-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-800 font-semibold text-center border border-slate-200 transition-colors"
-              >
-                Agent
-              </button>
-              <button
-                type="button"
-                onClick={() => fillCredentials('ramesh.kumar@gmail.com', 'UserPassword@2026')}
-                className="p-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-800 font-semibold text-center border border-slate-200 transition-colors"
-              >
-                User / Owner
-              </button>
+          {process.env.NODE_ENV !== 'production' && (
+            <div className="pt-4 border-t border-slate-100 space-y-2">
+              <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block text-center">
+                Quick 1-Click Demo Login
+              </span>
+              <div className="grid grid-cols-3 gap-2 text-[11px]">
+                <button
+                  type="button"
+                  onClick={() => fillCredentials('admin@rasproperties.in', 'AdminPassword@2026')}
+                  className="p-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-800 font-semibold text-center border border-slate-200 transition-colors"
+                >
+                  Admin
+                </button>
+                <button
+                  type="button"
+                  onClick={() => fillCredentials('rajesh.sharma@rasproperties.in', 'UserPassword@2026')}
+                  className="p-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-800 font-semibold text-center border border-slate-200 transition-colors"
+                >
+                  Agent
+                </button>
+                <button
+                  type="button"
+                  onClick={() => fillCredentials('ramesh.kumar@gmail.com', 'UserPassword@2026')}
+                  className="p-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-800 font-semibold text-center border border-slate-200 transition-colors"
+                >
+                  User / Owner
+                </button>
+              </div>
             </div>
-          </div>
+          )}
 
           {/* Register Link */}
           <div className="text-center text-xs text-slate-500 pt-2">

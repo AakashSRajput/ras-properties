@@ -4,8 +4,16 @@ import { cookies } from 'next/headers';
 import { prisma } from './db';
 import { UserRole, UserSession } from '@/types';
 
-const JWT_SECRET = process.env.JWT_SECRET || process.env.AUTH_SECRET || 'ras-properties-super-secret-key-2026-production-ready';
 const COOKIE_NAME = 'ras_auth_token';
+
+function getJwtSecret(): string {
+  const secret = process.env.JWT_SECRET || process.env.AUTH_SECRET;
+  if (secret) return secret;
+  if (process.env.NODE_ENV === 'production') {
+    throw new Error('JWT_SECRET or AUTH_SECRET must be configured in production.');
+  }
+  return 'ras-properties-local-development-secret';
+}
 
 export async function hashPassword(password: string): Promise<string> {
   const salt = await bcrypt.genSalt(10);
@@ -17,12 +25,12 @@ export async function verifyPassword(password: string, hash: string): Promise<bo
 }
 
 export function signToken(payload: object): string {
-  return jwt.sign(payload, JWT_SECRET, { expiresIn: '30d' });
+  return jwt.sign(payload, getJwtSecret(), { expiresIn: '30d' });
 }
 
 export function verifyToken<T>(token: string): T | null {
   try {
-    return jwt.verify(token, JWT_SECRET) as T;
+    return jwt.verify(token, getJwtSecret()) as T;
   } catch {
     return null;
   }
