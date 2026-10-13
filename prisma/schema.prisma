@@ -1,0 +1,316 @@
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id            String         @id @default(cuid())
+  name          String
+  email         String         @unique
+  phone         String?
+  passwordHash  String
+  role          String         @default("USER") // USER, OWNER, AGENT, ADMIN
+  avatar        String?
+  isSuspended   Boolean        @default(false)
+  emailVerified DateTime?
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+
+  properties    Property[]     @relation("UserProperties")
+  favorites     Favorite[]
+  enquiries     Enquiry[]
+  visitRequests VisitRequest[]
+  reviews       Review[]
+  notifications Notification[]
+  agentProfile  Agent?
+}
+
+model Property {
+  id                 String            @id @default(cuid())
+  title              String
+  slug               String            @unique
+  description        String
+  propertyType       String            // Apartment, Flat, Villa, Independent House, Builder Floor, Studio Apartment, Plot, Farm House, Office, Shop, Showroom, Warehouse, Commercial Building, Industrial Property
+  listingType        String            @default("FOR_SALE") // FOR_SALE, FOR_RENT, FOR_LEASE
+  price              Float
+  pricePerSqFt       Float?
+  area               Float
+  areaUnit           String            @default("Sq.Ft.") // Sq.Ft., Sq.Yards, Gaj, Acres, Marla
+  bedrooms           Int?              @default(0)
+  bathrooms          Int?              @default(0)
+  balconies          Int?              @default(0)
+  floor              Int?              @default(0)
+  totalFloors        Int?              @default(0)
+  furnishedStatus    String?           @default("Semi-Furnished") // Unfurnished, Semi-Furnished, Fully Furnished
+  parking            String?           @default("1 Covered")
+  facing             String?           @default("North-East")
+  constructionYear   Int?
+  propertyAge        String?           @default("0-1 Years")
+  address            String
+  locality           String
+  city               String
+  state              String            @default("Uttar Pradesh")
+  pincode            String
+  latitude           Float?
+  longitude          Float?
+  ownerId            String?
+  agentId            String?
+  status             String            @default("APPROVED") // DRAFT, PENDING_APPROVAL, APPROVED, REJECTED, SOLD, RENTED, INACTIVE
+  verificationStatus String            @default("VERIFIED") // UNVERIFIED, VERIFIED, RERA_APPROVED
+  reraNumber         String?
+  featured           Boolean           @default(false)
+  views              Int               @default(0)
+  createdAt          DateTime          @default(now())
+  updatedAt          DateTime          @updatedAt
+
+  owner              User?             @relation("UserProperties", fields: [ownerId], references: [id], onDelete: SetNull)
+  agent              Agent?            @relation(fields: [agentId], references: [id], onDelete: SetNull)
+  images             PropertyImage[]
+  amenities          PropertyAmenity[]
+  favorites          Favorite[]
+  enquiries          Enquiry[]
+  visitRequests      VisitRequest[]
+  reviews            Review[]
+
+  @@index([city, locality])
+  @@index([propertyType, listingType])
+  @@index([price])
+  @@index([status, featured])
+}
+
+model PropertyImage {
+  id         String   @id @default(cuid())
+  propertyId String
+  url        String
+  caption    String?
+  isFeatured Boolean  @default(false)
+  order      Int      @default(0)
+  createdAt  DateTime @default(now())
+
+  property   Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+
+  @@index([propertyId])
+}
+
+model Amenity {
+  id         String            @id @default(cuid())
+  name       String            @unique
+  slug       String            @unique
+  icon       String            @default("CheckCircle")
+  category   String            @default("General") // Security, Leisure, Convenience, Sports, Environment
+  createdAt  DateTime          @default(now())
+
+  properties PropertyAmenity[]
+}
+
+model PropertyAmenity {
+  id         String   @id @default(cuid())
+  propertyId String
+  amenityId  String
+
+  property   Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  amenity    Amenity  @relation(fields: [amenityId], references: [id], onDelete: Cascade)
+
+  @@unique([propertyId, amenityId])
+  @@index([propertyId])
+  @@index([amenityId])
+}
+
+model Favorite {
+  id         String   @id @default(cuid())
+  userId     String
+  propertyId String
+  createdAt  DateTime @default(now())
+
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  property   Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, propertyId])
+  @@index([userId])
+  @@index([propertyId])
+}
+
+model Enquiry {
+  id            String    @id @default(cuid())
+  name          String
+  email         String
+  phone         String
+  message       String
+  preferredDate String?
+  preferredTime String?
+  propertyId    String?
+  userId        String?
+  agentId       String?
+  status        String    @default("NEW") // NEW, CONTACTED, SCHEDULED, COMPLETED, CLOSED
+  notes         String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  property      Property? @relation(fields: [propertyId], references: [id], onDelete: SetNull)
+  user          User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
+  agent         Agent?    @relation(fields: [agentId], references: [id], onDelete: SetNull)
+
+  @@index([propertyId])
+  @@index([status])
+}
+
+model VisitRequest {
+  id         String   @id @default(cuid())
+  name       String
+  email      String
+  phone      String
+  visitDate  String
+  visitTime  String
+  message    String?
+  status     String   @default("PENDING") // PENDING, ACCEPTED, RESCHEDULED, REJECTED, COMPLETED
+  propertyId String
+  userId     String?
+  agentId    String?
+  notes      String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  property   Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  user       User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  agent      Agent?   @relation(fields: [agentId], references: [id], onDelete: SetNull)
+
+  @@index([propertyId])
+  @@index([status])
+}
+
+model Agent {
+  id             String         @id @default(cuid())
+  userId         String?        @unique
+  name           String
+  photo          String?
+  email          String         @unique
+  phone          String
+  bio            String?
+  experience     Int            @default(3) // Years
+  specialization String         @default("Residential & Commercial")
+  licenseNumber  String?
+  rating         Float          @default(4.8)
+  reviewCount    Int            @default(0)
+  activeListings Int            @default(0)
+  city           String         @default("Noida")
+  state          String         @default("Uttar Pradesh")
+  isVerified     Boolean        @default(true)
+  whatsapp       String?
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+
+  user           User?          @relation(fields: [userId], references: [id], onDelete: SetNull)
+  properties     Property[]
+  enquiries      Enquiry[]
+  visitRequests  VisitRequest[]
+  reviews        Review[]
+
+  @@index([city])
+}
+
+model Review {
+  id         String   @id @default(cuid())
+  rating     Int      @default(5)
+  comment    String
+  userId     String
+  agentId    String?
+  propertyId String?
+  isApproved Boolean  @default(true)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  agent      Agent?    @relation(fields: [agentId], references: [id], onDelete: SetNull)
+  property   Property? @relation(fields: [propertyId], references: [id], onDelete: SetNull)
+
+  @@index([agentId])
+  @@index([propertyId])
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  title     String
+  message   String
+  type      String   @default("INFO") // INFO, ENQUIRY, VISIT, PROPERTY_APPROVED, PROPERTY_REJECTED, SYSTEM
+  link      String?
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, isRead])
+}
+
+model Location {
+  id            String   @id @default(cuid())
+  city          String
+  locality      String
+  state         String   @default("Uttar Pradesh")
+  pincode       String
+  isPopular     Boolean  @default(false)
+  image         String?
+  propertyCount Int      @default(0)
+  createdAt     DateTime @default(now())
+
+  @@unique([city, locality])
+  @@index([city])
+  @@index([isPopular])
+}
+
+model BlogPost {
+  id             String        @id @default(cuid())
+  title          String
+  slug           String        @unique
+  excerpt        String
+  content        String
+  featuredImage  String
+  categoryId     String?
+  authorName     String        @default("RAS Properties Editorial")
+  authorAvatar   String?
+  published      Boolean       @default(true)
+  views          Int           @default(0)
+  seoTitle       String?
+  seoDescription String?
+  readTime       String        @default("5 min read")
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  category       BlogCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+
+  @@index([slug])
+  @@index([published])
+}
+
+model BlogCategory {
+  id          String     @id @default(cuid())
+  name        String     @unique
+  slug        String     @unique
+  description String?
+  createdAt   DateTime   @default(now())
+
+  posts       BlogPost[]
+}
+
+model ContactMessage {
+  id        String   @id @default(cuid())
+  name      String
+  email     String
+  phone     String
+  subject   String
+  message   String
+  status    String   @default("UNREAD") // UNREAD, READ, REPLIED
+  createdAt DateTime @default(now())
+}
+
+model WebsiteSetting {
+  id          String   @id @default(cuid())
+  key         String   @unique
+  value       String
+  description String?
+  updatedAt   DateTime @updatedAt
+}
